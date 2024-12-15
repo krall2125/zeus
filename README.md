@@ -1,5 +1,5 @@
 # zeus - the perfect esoteric programming languagewirtenn in Odin
-it's perfect. literally perfect. it currently has 2 standards. z1 is the most minimalistic one and contains only 4 operations. every operation is one byte.
+it's perfect. literally perfect. it currently has 2 standards. z1 is the most minimalistic one and contains only 4 operations. every operation is one character long.
 
 ## z1 standard
 - introduced `+` which increments the storage cell
