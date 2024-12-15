@@ -21,7 +21,7 @@ read_file :: proc(filepath: string) -> string {
 ZeusBytecode :: enum {
 	INC, DEC, PUTN, PUTC,
 	MULT, DIV, ZERO, SAVE, RESTORE,
-	PARF, BLOCKOPEN, BLOCKCLOSE
+	PARF, BLOCKOPEN, BLOCKCLOSE, JUMP_FALSE, JUMP,
 }
 
 compile_zeus :: proc(program: string) -> [dynamic]ZeusBytecode {
@@ -31,20 +31,25 @@ compile_zeus :: proc(program: string) -> [dynamic]ZeusBytecode {
 
 	bytecode := make([dynamic]ZeusBytecode)
 
+	doing_block_stuff := false
+
 	for token in program {
 		switch token {
-			case '+': storage += 1
-			case '-': storage -= 1
-			case '.': fmt.printf("%d", storage)
-			case ':': fmt.printf("%c", storage)
-			case '*': storage *= 2
-			case '/': storage /= 2
-			case '0': storage = 0
-			case '{': append(&values, storage)
-			case '}': storage = pop(&values)
-			case 'p': fmt.printf("meow :3\n")
+			case '+': append(&bytecode, ZeusBytecode.INC)
+			case '-': append(&bytecode, ZeusBytecode.DEC)
+			case '.': append(&bytecode, ZeusBytecode.PUTN)
+			case ':': append(&bytecode, ZeusBytecode.PUTC)
+			case '*': append(&bytecode, ZeusBytecode.MULT)
+			case '/': append(&bytecode, ZeusBytecode.DIV)
+			case '0': append(&bytecode, ZeusBytecode.ZERO)
+			case '{': append(&bytecode, ZeusBytecode.SAVE)
+			case '}': append(&bytecode, ZeusBytecode.RESTORE)
+			case 'p': append(&bytecode, ZeusBytecode.PARF)
+			case '?': append(&bytecode, ZeusBytecode.JUMP_FALSE)
 		}
 	}
+
+	return bytecode
 }
 
 main :: proc() {
