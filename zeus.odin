@@ -24,28 +24,37 @@ ZeusBytecode :: enum {
 	PARF, BLOCKOPEN, BLOCKCLOSE, JUMP_FALSE, JUMP,
 }
 
-compile_zeus :: proc(program: string) -> [dynamic]ZeusBytecode {
-	storage := 0
-	values := make([dynamic]int)
-	defer delete(values)
-
-	bytecode := make([dynamic]ZeusBytecode)
+compile_zeus :: proc(program: string) -> [dynamic]int {
+	bytecode := make([dynamic]int)
 
 	doing_block_stuff := false
 
-	for token in program {
-		switch token {
-			case '+': append(&bytecode, ZeusBytecode.INC)
-			case '-': append(&bytecode, ZeusBytecode.DEC)
-			case '.': append(&bytecode, ZeusBytecode.PUTN)
-			case ':': append(&bytecode, ZeusBytecode.PUTC)
-			case '*': append(&bytecode, ZeusBytecode.MULT)
-			case '/': append(&bytecode, ZeusBytecode.DIV)
-			case '0': append(&bytecode, ZeusBytecode.ZERO)
-			case '{': append(&bytecode, ZeusBytecode.SAVE)
-			case '}': append(&bytecode, ZeusBytecode.RESTORE)
-			case 'p': append(&bytecode, ZeusBytecode.PARF)
-			case '?': append(&bytecode, ZeusBytecode.JUMP_FALSE)
+	positions := make([dynamic]int)
+	defer delete(positions)
+
+	for i in 0..<len(program) {
+		switch program[i] {
+			case '+': append(&bytecode, int(ZeusBytecode.INC))
+			case '-': append(&bytecode, int(ZeusBytecode.DEC))
+			case '.': append(&bytecode, int(ZeusBytecode.PUTN))
+			case ':': append(&bytecode, int(ZeusBytecode.PUTC))
+			case '*': append(&bytecode, int(ZeusBytecode.MULT))
+			case '/': append(&bytecode, int(ZeusBytecode.DIV))
+			case '0': append(&bytecode, int(ZeusBytecode.ZERO))
+			case '{': append(&bytecode, int(ZeusBytecode.SAVE))
+			case '}': append(&bytecode, int(ZeusBytecode.RESTORE))
+			case 'p': append(&bytecode, int(ZeusBytecode.PARF))
+			case '?':
+				append(&bytecode, int(ZeusBytecode.JUMP_FALSE))
+				append(&positions, len(bytecode))
+				append(&bytecode, i + 2)
+			case '(':
+				// sorry for the deep indentation
+				if len(positions) == 0 {
+					continue
+				}
+				if bytecode[positions[len(positions) - 1]] == int(ZeusBytecode.JUMP_FALSE) {
+				}
 		}
 	}
 
