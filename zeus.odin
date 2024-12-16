@@ -48,13 +48,8 @@ compile_zeus :: proc(program: string) -> [dynamic]int {
 				append(&bytecode, int(ZeusBytecode.JUMP_FALSE))
 				append(&positions, len(bytecode))
 				append(&bytecode, i + 2)
-			case '(':
-				// sorry for the deep indentation
-				if len(positions) == 0 {
-					continue
-				}
-				if bytecode[positions[len(positions) - 1]] == int(ZeusBytecode.JUMP_FALSE) {
-				}
+			case '(': // fuck! it doesn't emit anything
+			case ')':
 		}
 	}
 
