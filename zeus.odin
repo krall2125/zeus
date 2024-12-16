@@ -21,7 +21,7 @@ read_file :: proc(filepath: string) -> string {
 ZeusBytecode :: enum {
 	INC, DEC, PUTN, PUTC,
 	MULT, DIV, ZERO, SAVE, RESTORE,
-	PARF, BLOCKOPEN, BLOCKCLOSE, JUMP_FALSE, JUMP,
+	PARF, BLOCKOPEN, BLOCKCLOSE, JUMP_FALSE, JUMP, END
 }
 
 compile_zeus :: proc(program: string) -> [dynamic]int {
@@ -48,8 +48,40 @@ compile_zeus :: proc(program: string) -> [dynamic]int {
 				append(&bytecode, int(ZeusBytecode.JUMP_FALSE))
 				append(&positions, len(bytecode))
 				append(&bytecode, i + 2)
-			case '(': // fuck! it doesn't emit anything
+			case '!':
+				if len(positions) == 0 {
+					fmt.eprintf("Error: No corresponding if for else block.\n")
+					continue
+				}
+
+				pos := pop(&positions)
+
+				if bytecode[pos - 1] != int(ZeusBytecode.JUMP_FALSE) {
+					fmt.eprintf("Error: No corresponding if for else block.\n")
+					return bytecode
+				}
+
+				bytecode[pos] = len(bytecode)
+
+				append(&bytecode, int(ZeusBytecode.JUMP))
+				append(&positions, len(bytecode))
+				append(&bytecode, i + 2)
 			case ')':
+				if len(positions) == 0 {
+					fmt.eprintf("Error: No corresponding jump for end of block.\n")
+					continue
+				}
+
+				pos := pop(&positions)
+
+				if bytecode[pos - 1] != int(ZeusBytecode.JUMP_FALSE) && bytecode[pos - 1] != int(ZeusBytecode.JUMP) {
+					fmt.eprintf("Error: No corresponding jump for end of block.\n")
+					return bytecode
+				}
+
+				bytecode[pos] = len(bytecode)
+
+				append(&bytecode, int(ZeusBytecode.END))
 		}
 	}
 
