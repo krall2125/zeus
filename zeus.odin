@@ -3,6 +3,7 @@ package zeus
 import "core:os"
 import "core:strings"
 import "core:fmt"
+import "core:strconv"
 
 ZeusStandard :: enum {
 	Z1, Z2, Z3, Z4
@@ -177,6 +178,8 @@ exec_zeus :: proc(program: [dynamic]int) {
 
 	defer delete(stack)
 
+	buf: [32]byte
+
 	i := 0
 	for i < len(program) {
 		// fmt.printf("i: %d %s\n", i, ZeusBytecode(program[i]))
@@ -199,6 +202,29 @@ exec_zeus :: proc(program: [dynamic]int) {
 			case .JUMP:
 				i = program[i + 1]
 				// fmt.printf("jumping to %d\n", i)
+			case .FOR: i += 1
+			case .READN:
+				os.read(0, buf[:])
+				storage, _ = strconv.parse_i64(string(buf[:]))
+			case .READC:
+				os.read(0, buf[:])
+				storage = i64(buf[0])
+			case .EQ:
+				if len(stack) <= 0 {
+					fmt.eprintf("Cannot perform equality check because there is nothing to compare against!\n")
+					continue
+				}
+
+				storage = i64(storage == stack[len(stack) - 1])
+			case .LT:
+				if len(stack) <= 0 {
+					fmt.eprintf("Cannot perform less-than check because there is nothing to compare against!\n")
+					continue
+				}
+
+				storage = i64(storage < stack[len(stack) - 1])
+			case .NOT:
+				storage = i64(!bool(storage))
 			case .END:
 		}
 		i += 1
