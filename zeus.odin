@@ -21,7 +21,7 @@ read_file :: proc(filepath: string) -> string {
 ZeusBytecode :: enum {
 	INC, DEC, PUTN, PUTC,
 	MULT, DIV, ZERO, SAVE, RESTORE,
-	PARF, BLOCKOPEN, BLOCKCLOSE, JUMP_FALSE, JUMP, END
+	PARF, JUMP_FALSE, JUMP, END
 }
 
 block_stuff :: proc(program: string, i: int, bytecode: ^[dynamic]int, positions: ^[dynamic]int, regular_jump: bool) {
@@ -122,5 +122,27 @@ parse_cmd_args :: proc(standard: ^ZeusStandard, arg: string) {
 		case "z2": standard^ = ZeusStandard.Z2
 		case "z3": standard^ = ZeusStandard.Z3
 		case:
+	}
+}
+
+exec_zeus :: proc(program: [dynamic]int) {
+	storage: i64 = 0
+	stack := make([dynamic]i64)
+
+	defer delete(stack)
+
+	for i := 0; i < len(program); i += 1 {
+		switch ZeusBytecode(program[i]) {
+			case .INC: storage += 1
+			case .DEC: storage -= 1
+			case .PUTN: fmt.printf("%d", storage)
+			case .PUTC: fmt.printf("%c", storage)
+			case .MULT: storage *= 2
+			case .DIV: storage /= 2
+			case .ZERO: storage = 0
+			case .SAVE: append(&stack, storage)
+			case .RESTORE: storage = pop(&stack)
+			case .PARF: fmt.printf("meow :3\n")
+		}
 	}
 }
