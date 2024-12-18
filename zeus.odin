@@ -143,6 +143,15 @@ exec_zeus :: proc(program: [dynamic]int) {
 			case .SAVE: append(&stack, storage)
 			case .RESTORE: storage = pop(&stack)
 			case .PARF: fmt.printf("meow :3\n")
+			case .JUMP_FALSE:
+				if storage == 0 {
+					i = program[i + 1] - 1
+					continue
+				}
+			case .JUMP:
+				i = program[i + 1] - 1
+				continue
+			case .END:
 		}
 	}
 }
