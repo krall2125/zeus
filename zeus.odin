@@ -6,7 +6,7 @@ import "core:fmt"
 import "core:strconv"
 
 ZeusStandard :: enum {
-	Z1, Z2, Z3, Z4
+	Z1, Z2, Z3, Z4, Z4b
 }
 
 read_file :: proc(filepath: string) -> string {
@@ -23,7 +23,8 @@ ZeusBytecode :: enum {
 	INC, DEC, PUTN, PUTC,
 	MULT, DIV, ZERO, SAVE, RESTORE,
 	PARF, JUMP_FALSE, JUMP, END,
-	FOR, READN, READC, EQ, LT, NOT, SWAP
+	FOR, READN, READC, EQ, LT, NOT, SWAP,
+		DEBUG, COUNT, COUNT_CHECK, COUNT_INC
 }
 
 block_stuff :: proc(program: string, i: int, bytecode: ^[dynamic]int, positions: ^[dynamic]int, regular_jump: bool) {
@@ -33,6 +34,14 @@ block_stuff :: proc(program: string, i: int, bytecode: ^[dynamic]int, positions:
 	}
 
 	pos := pop(positions)
+
+	if regular_jump && (bytecode^[pos - 1] == int(ZeusBytecode.COUNT)) {
+		append(bytecode, int(ZeusBytecode.COUNT_INC))
+		append(bytecode, int(ZeusBytecode.JUMP))
+		append(bytecode, pos - 1)
+		bytecode^[pos + 1] = len(bytecode^)
+		return
+	}
 
 	if regular_jump && (bytecode^[pos - 1] == int(ZeusBytecode.FOR)) {
 		append(bytecode, int(ZeusBytecode.JUMP))
@@ -131,6 +140,21 @@ actual_compile :: proc(std: ZeusStandard, program: string, i: int, bytecode: ^[d
 			}
 
 			append(bytecode, int(ZeusBytecode.SWAP))
+		case 'd':
+			if std < ZeusStandard.Z4b {
+				return
+			}
+
+			append(bytecode, int(ZeusBytecode.DEBUG))
+		case 'c':
+			if std < ZeusStandard.Z4b {
+				return
+			}
+
+			append(bytecode, int(ZeusBytecode.COUNT))
+			append(positions, len(bytecode^))
+			append(bytecode, int(ZeusBytecode.COUNT_CHECK))
+			append(bytecode, len(bytecode^))
 	}
 }
 
@@ -150,7 +174,7 @@ compile_zeus :: proc(program: string, std: ZeusStandard) -> [dynamic]int {
 }
 
 main :: proc() {
-	std := ZeusStandard.Z4
+	std := ZeusStandard.Z4b
 	for arg in os.args[1:] {
 		if arg[0] == '-' {
 			parse_cmd_args(&std, arg[1:])
@@ -176,6 +200,7 @@ parse_cmd_args :: proc(standard: ^ZeusStandard, arg: string) {
 		case "z2": standard^ = ZeusStandard.Z2
 		case "z3": standard^ = ZeusStandard.Z3
 		case "z4": standard^ = ZeusStandard.Z4
+		case "z4b": standard^ = ZeusStandard.Z4b
 		case:
 	}
 }
@@ -185,6 +210,14 @@ exec_zeus :: proc(program: [dynamic]int) {
 	stack := make([dynamic]i64)
 
 	defer delete(stack)
+
+	counts := make([dynamic]i64)
+
+	defer delete(counts)
+
+	iterators := make([dynamic]i64)
+
+	defer delete(iterators)
 
 	buf: [32]byte
 
@@ -242,6 +275,23 @@ exec_zeus :: proc(program: [dynamic]int) {
 				append(&stack, storage)
 
 				storage = temp
+			case .DEBUG:
+				fmt.printf("Storage cell: %d\n", storage)
+				fmt.printf("Stack: %v\n", stack)
+			case .COUNT:
+				append(&counts, storage)
+				append(&iterators, 0)
+			case .COUNT_CHECK:
+				idx := len(iterators) - 1
+				if iterators[idx] >= counts[idx] {
+					i = program[i + 1] + 1
+					continue
+				}
+
+				i += 1
+			case .COUNT_INC:
+				iterators[len(iterators) - 1] += 1
+				i += 1
 			case .END:
 			case .FOR:
 		}
