@@ -19,3 +19,12 @@ it's perfect. literally perfect. it currently has 3 standards. z1 is the most mi
 - introduced `?` which checks if the storage is 0 and if that's true jumps to either the end or else branch
 - introduced `!` which is the else branch
 - introduced `)` which is the end of a block
+
+## z4 standard
+- introduced `f` which is a looping construct (executes code block ending with `)` while storage cell is nonzero)
+- introduced `,` which reads a number from the user into the storage cell
+- introduced `;` which reads a single character from the user (technically it reads a bunch but only saves the first one)
+- introduced `=` which checks if the storage cell and value atop the stack are equal. it saves a 0 or 1 into the storage cell backing up the initial value onto the top of the stack
+- introduced `<` which does the same thing as `=` but actually checks if hte storage cell is less than top of hte stack instead
+- introduced `~` which performs logical not on the storage cell
+- introduced `\` which swaps the storage cell and value atop the stack
