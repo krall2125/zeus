@@ -112,7 +112,7 @@ main :: proc() {
 		bytecode := compile_zeus(contents, std)
 		defer delete(bytecode)
 
-		fmt.printf("%v\n", bytecode)
+		exec_zeus(bytecode)
 	}
 }
 
@@ -131,7 +131,9 @@ exec_zeus :: proc(program: [dynamic]int) {
 
 	defer delete(stack)
 
-	for i := 0; i < len(program); i += 1 {
+	i := 0
+	for i < len(program) {
+		// fmt.printf("i: %d %s\n", i, ZeusBytecode(program[i]))
 		switch ZeusBytecode(program[i]) {
 			case .INC: storage += 1
 			case .DEC: storage -= 1
@@ -145,13 +147,16 @@ exec_zeus :: proc(program: [dynamic]int) {
 			case .PARF: fmt.printf("meow :3\n")
 			case .JUMP_FALSE:
 				if storage == 0 {
-					i = program[i + 1] - 1
-					continue
+					i = program[i + 1]
+					// fmt.printf("jumping to %d\n", i)
 				}
+				i += 1
 			case .JUMP:
-				i = program[i + 1] - 1
+				i = program[i + 1]
+				// fmt.printf("jumping to %d\n", i)
 				continue
 			case .END:
 		}
+		i += 1
 	}
 }
