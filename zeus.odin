@@ -226,7 +226,7 @@ exec_zeus :: proc(program: [dynamic]int) {
 				}
 
 				append(&stack, storage)
-				storage = i64(storage == stack[len(stack) - 1])
+				storage = i64(storage == stack[len(stack) - 2])
 			case .LT:
 				if len(stack) <= 0 {
 					fmt.eprintf("Cannot perform less-than check because there is nothing to compare against!\n")
@@ -234,7 +234,7 @@ exec_zeus :: proc(program: [dynamic]int) {
 				}
 
 				append(&stack, storage)
-				storage = i64(storage < stack[len(stack) - 1])
+				storage = i64(storage < stack[len(stack) - 2])
 			case .NOT:
 				storage = i64(!bool(storage))
 			case .SWAP:
