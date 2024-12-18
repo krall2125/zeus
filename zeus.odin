@@ -35,9 +35,9 @@ block_stuff :: proc(program: string, i: int, bytecode: ^[dynamic]int, positions:
 	pos := pop(positions)
 
 	if regular_jump && (bytecode^[pos - 1] == int(ZeusBytecode.FOR)) {
-		bytecode^[pos] = len(bytecode^)
-		append(bytecode, int(ZeusBytecode.JUMP_FALSE))
-		append(bytecode, pos - 2)
+		append(bytecode, int(ZeusBytecode.JUMP))
+		append(bytecode, pos - 1)
+		bytecode^[pos + 1] = len(bytecode^)
 		return
 	}
 
@@ -93,6 +93,7 @@ actual_compile :: proc(std: ZeusStandard, program: string, i: int, bytecode: ^[d
 
 			append(bytecode, int(ZeusBytecode.FOR))
 			append(positions, len(bytecode^))
+			append(bytecode, int(ZeusBytecode.JUMP_FALSE))
 			append(bytecode, len(bytecode^))
 		case ',':
 			if std < ZeusStandard.Z4 {
@@ -143,7 +144,7 @@ compile_zeus :: proc(program: string, std: ZeusStandard) -> [dynamic]int {
 }
 
 main :: proc() {
-	std := ZeusStandard.Z3
+	std := ZeusStandard.Z4
 	for arg in os.args[1:] {
 		if arg[0] == '-' {
 			parse_cmd_args(&std, arg[1:])
@@ -168,6 +169,7 @@ parse_cmd_args :: proc(standard: ^ZeusStandard, arg: string) {
 		case "z1": standard^ = ZeusStandard.Z1
 		case "z2": standard^ = ZeusStandard.Z2
 		case "z3": standard^ = ZeusStandard.Z3
+		case "z4": standard^ = ZeusStandard.Z4
 		case:
 	}
 }
@@ -199,10 +201,12 @@ exec_zeus :: proc(program: [dynamic]int) {
 					i = program[i + 1]
 					// fmt.printf("jumping to %d\n", i)
 				}
+				else {
+					i += 1
+				}
 			case .JUMP:
 				i = program[i + 1]
 				// fmt.printf("jumping to %d\n", i)
-			case .FOR: i += 1
 			case .READN:
 				os.read(0, buf[:])
 				storage, _ = strconv.parse_i64(string(buf[:]))
@@ -226,6 +230,7 @@ exec_zeus :: proc(program: [dynamic]int) {
 			case .NOT:
 				storage = i64(!bool(storage))
 			case .END:
+			case .FOR:
 		}
 		i += 1
 	}
