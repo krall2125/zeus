@@ -23,7 +23,7 @@ ZeusBytecode :: enum {
 	INC, DEC, PUTN, PUTC,
 	MULT, DIV, ZERO, SAVE, RESTORE,
 	PARF, JUMP_FALSE, JUMP, END,
-	FOR, READN, READC, EQ, LT, NOT,
+	FOR, READN, READC, EQ, LT, NOT, SWAP
 }
 
 block_stuff :: proc(program: string, i: int, bytecode: ^[dynamic]int, positions: ^[dynamic]int, regular_jump: bool) {
@@ -125,6 +125,12 @@ actual_compile :: proc(std: ZeusStandard, program: string, i: int, bytecode: ^[d
 			}
 
 			append(bytecode, int(ZeusBytecode.NOT))
+		case '\\':
+			if std < ZeusStandard.Z4 {
+				return
+			}
+
+			append(bytecode, int(ZeusBytecode.SWAP))
 	}
 }
 
@@ -229,6 +235,11 @@ exec_zeus :: proc(program: [dynamic]int) {
 				storage = i64(storage < stack[len(stack) - 1])
 			case .NOT:
 				storage = i64(!bool(storage))
+			case .SWAP:
+				temp := pop(&stack)
+				append(&stack, storage)
+
+				storage = temp
 			case .END:
 			case .FOR:
 		}
