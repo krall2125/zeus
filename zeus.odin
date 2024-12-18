@@ -24,7 +24,7 @@ ZeusBytecode :: enum {
 	MULT, DIV, ZERO, SAVE, RESTORE,
 	PARF, JUMP_FALSE, JUMP, END,
 	FOR, READN, READC, EQ, LT, NOT, SWAP,
-		DEBUG, COUNT, COUNT_CHECK, COUNT_INC, MEM, MEMR, MEMW
+		DEBUG, COUNT, COUNT_CHECK, COUNT_INC, MEM, MEMR, MEMW, COUNT_ITER,
 }
 
 block_stuff :: proc(program: string, i: int, bytecode: ^[dynamic]int, positions: ^[dynamic]int, regular_jump: bool) {
@@ -173,6 +173,12 @@ actual_compile :: proc(std: ZeusStandard, program: string, i: int, bytecode: ^[d
 			}
 
 			append(bytecode, int(ZeusBytecode.MEMW))
+		case 'i':
+			if std < ZeusStandard.Z4b {
+				return
+			}
+
+			append(bytecode, int(ZeusBytecode.COUNT_ITER))
 	}
 }
 
@@ -240,6 +246,10 @@ exec_zeus :: proc(program: [dynamic]int) {
 	buf: [32]byte
 	mem: [512]i64
 
+	for i in 0..<512 {
+		mem[i] = 0
+	}
+
 	i := 0
 	for i < len(program) {
 		// fmt.printf("i: %d %s\n", i, ZeusBytecode(program[i]))
@@ -274,6 +284,7 @@ exec_zeus :: proc(program: [dynamic]int) {
 			case .EQ:
 				if len(stack) <= 0 {
 					fmt.eprintf("Cannot perform equality check because there is nothing to compare against!\n")
+					i += 1
 					continue
 				}
 
@@ -282,6 +293,7 @@ exec_zeus :: proc(program: [dynamic]int) {
 			case .LT:
 				if len(stack) <= 0 {
 					fmt.eprintf("Cannot perform less-than check because there is nothing to compare against!\n")
+					i += 1
 					continue
 				}
 
@@ -304,6 +316,7 @@ exec_zeus :: proc(program: [dynamic]int) {
 				idx := len(iterators) - 1
 				if iterators[idx] >= counts[idx] {
 					i = program[i + 1] + 1
+					i += 1
 					continue
 				}
 
@@ -317,6 +330,7 @@ exec_zeus :: proc(program: [dynamic]int) {
 				addr: ^i64 = auto_cast(uintptr(storage))
 				if addr > &mem[511] {
 					fmt.eprintf("Cannot read from memory beyond 512 bytes\n")
+					i += 1
 					continue
 				}
 
@@ -325,11 +339,21 @@ exec_zeus :: proc(program: [dynamic]int) {
 				addr: ^i64 = auto_cast(uintptr(storage))
 				if addr > &mem[511] {
 					fmt.eprintf("Cannot write to memory beyond 512 bytes\n")
+					i += 1
 					continue
 				}
 
 				val := pop(&stack)
 				addr^ = val
+			case .COUNT_ITER:
+				if len(iterators) <= 0 {
+					fmt.eprintf("Cannot read iterator - not in count loop\n")
+					i += 1
+					continue
+				}
+
+				append(&stack, storage)
+				storage = iterators[len(iterators) - 1]
 			case .END:
 			case .FOR:
 		}
