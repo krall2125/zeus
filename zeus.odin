@@ -24,7 +24,7 @@ ZeusBytecode :: enum {
 	MULT, DIV, ZERO, SAVE, RESTORE,
 	PARF, JUMP_FALSE, JUMP, END,
 	FOR, READN, READC, EQ, LT, NOT, SWAP,
-		DEBUG, COUNT, COUNT_CHECK, COUNT_INC
+		DEBUG, COUNT, COUNT_CHECK, COUNT_INC, MEM, MEMR, MEMW
 }
 
 block_stuff :: proc(program: string, i: int, bytecode: ^[dynamic]int, positions: ^[dynamic]int, regular_jump: bool) {
@@ -155,6 +155,24 @@ actual_compile :: proc(std: ZeusStandard, program: string, i: int, bytecode: ^[d
 			append(positions, len(bytecode^))
 			append(bytecode, int(ZeusBytecode.COUNT_CHECK))
 			append(bytecode, len(bytecode^))
+		case 'm':
+			if std < ZeusStandard.Z4b {
+				return
+			}
+
+			append(bytecode, int(ZeusBytecode.MEM))
+		case 'r':
+			if std < ZeusStandard.Z4b {
+				return
+			}
+
+			append(bytecode, int(ZeusBytecode.MEMR))
+		case 'w':
+			if std < ZeusStandard.Z4b {
+				return
+			}
+
+			append(bytecode, int(ZeusBytecode.MEMW))
 	}
 }
 
@@ -220,10 +238,11 @@ exec_zeus :: proc(program: [dynamic]int) {
 	defer delete(iterators)
 
 	buf: [32]byte
+	mem: [512]i64
 
 	i := 0
 	for i < len(program) {
-		fmt.printf("i: %d %s\n", i, ZeusBytecode(program[i]))
+		// fmt.printf("i: %d %s\n", i, ZeusBytecode(program[i]))
 		switch ZeusBytecode(program[i]) {
 			case .INC: storage += 1
 			case .DEC: storage -= 1
@@ -291,6 +310,26 @@ exec_zeus :: proc(program: [dynamic]int) {
 				i += 1
 			case .COUNT_INC:
 				iterators[len(iterators) - 1] += 1
+			case .MEM:
+				append(&stack, storage)
+				storage = i64(uintptr(&mem[0]))
+			case .MEMR:
+				addr: ^i64 = auto_cast(uintptr(storage))
+				if addr > &mem[511] {
+					fmt.eprintf("Cannot write to memory beyond 512 bytes\n")
+					continue
+				}
+
+				append(&stack, addr^)
+			case .MEMW:
+				addr: ^i64 = auto_cast(uintptr(storage))
+				if addr > &mem[511] {
+					fmt.eprintf("Cannot write to memory beyond 512 bytes\n")
+					continue
+				}
+
+				val := pop(&stack)
+				addr^ = val
 			case .END:
 			case .FOR:
 		}
