@@ -225,6 +225,7 @@ exec_zeus :: proc(program: [dynamic]int) {
 					continue
 				}
 
+				append(&stack, storage)
 				storage = i64(storage == stack[len(stack) - 1])
 			case .LT:
 				if len(stack) <= 0 {
@@ -232,6 +233,7 @@ exec_zeus :: proc(program: [dynamic]int) {
 					continue
 				}
 
+				append(&stack, storage)
 				storage = i64(storage < stack[len(stack) - 1])
 			case .NOT:
 				storage = i64(!bool(storage))
