@@ -5,7 +5,7 @@ import "core:strings"
 import "core:fmt"
 
 ZeusStandard :: enum {
-	Z1, Z2, Z3
+	Z1, Z2, Z3, Z4
 }
 
 read_file :: proc(filepath: string) -> string {
@@ -21,7 +21,8 @@ read_file :: proc(filepath: string) -> string {
 ZeusBytecode :: enum {
 	INC, DEC, PUTN, PUTC,
 	MULT, DIV, ZERO, SAVE, RESTORE,
-	PARF, JUMP_FALSE, JUMP, END
+	PARF, JUMP_FALSE, JUMP, END,
+	FOR, READN, READC, EQ, LT, NOT,
 }
 
 block_stuff :: proc(program: string, i: int, bytecode: ^[dynamic]int, positions: ^[dynamic]int, regular_jump: bool) {
@@ -31,6 +32,13 @@ block_stuff :: proc(program: string, i: int, bytecode: ^[dynamic]int, positions:
 	}
 
 	pos := pop(positions)
+
+	if regular_jump && (bytecode^[pos - 1] == int(ZeusBytecode.FOR)) {
+		bytecode^[pos] = len(bytecode^)
+		append(bytecode, int(ZeusBytecode.JUMP_FALSE))
+		append(bytecode, pos - 2)
+		return
+	}
 
 	if bytecode^[pos - 1] != int(ZeusBytecode.JUMP_FALSE) && (regular_jump && bytecode^[pos - 1] != int(ZeusBytecode.JUMP)) {
 		fmt.eprintf("Error: No corresponding jump for end of block.\n")
@@ -59,7 +67,7 @@ actual_compile :: proc(std: ZeusStandard, program: string, i: int, bytecode: ^[d
 
 			append(bytecode, int(ZeusBytecode.JUMP_FALSE))
 			append(positions, len(bytecode^))
-			append(bytecode, i + 2)
+			append(bytecode, len(bytecode^))
 		case '!':
 			if std < ZeusStandard.Z3 {
 				return
@@ -68,7 +76,7 @@ actual_compile :: proc(std: ZeusStandard, program: string, i: int, bytecode: ^[d
 
 			append(bytecode, int(ZeusBytecode.JUMP))
 			append(positions, len(bytecode^))
-			append(bytecode, i + 2)
+			append(bytecode, len(bytecode^))
 		case ')':
 			if std < ZeusStandard.Z3 {
 				return
@@ -77,6 +85,44 @@ actual_compile :: proc(std: ZeusStandard, program: string, i: int, bytecode: ^[d
 			block_stuff(program, i, bytecode, positions, true)
 
 			append(bytecode, int(ZeusBytecode.END))
+		case 'f':
+			if std < ZeusStandard.Z4 {
+				return
+			}
+
+			append(bytecode, int(ZeusBytecode.FOR))
+			append(positions, len(bytecode^))
+			append(bytecode, len(bytecode^))
+		case ',':
+			if std < ZeusStandard.Z4 {
+				return
+			}
+
+			append(bytecode, int(ZeusBytecode.READN))
+		case ';':
+			if std < ZeusStandard.Z4 {
+				return
+			}
+
+			append(bytecode, int(ZeusBytecode.READC))
+		case '=':
+			if std < ZeusStandard.Z4 {
+				return
+			}
+
+			append(bytecode, int(ZeusBytecode.EQ))
+		case '<':
+			if std < ZeusStandard.Z4 {
+				return
+			}
+
+			append(bytecode, int(ZeusBytecode.LT))
+		case '~':
+			if std < ZeusStandard.Z4 {
+				return
+			}
+
+			append(bytecode, int(ZeusBytecode.NOT))
 	}
 }
 
@@ -150,11 +196,9 @@ exec_zeus :: proc(program: [dynamic]int) {
 					i = program[i + 1]
 					// fmt.printf("jumping to %d\n", i)
 				}
-				i += 1
 			case .JUMP:
 				i = program[i + 1]
 				// fmt.printf("jumping to %d\n", i)
-				continue
 			case .END:
 		}
 		i += 1
