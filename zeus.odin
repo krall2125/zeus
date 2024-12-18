@@ -25,7 +25,7 @@ ZeusBytecode :: enum {
 }
 
 block_stuff :: proc(program: string, i: int, bytecode: ^[dynamic]int, positions: ^[dynamic]int, regular_jump: bool) {
-	if len(positions) == 0 {
+	if len(positions^) == 0 {
 		fmt.eprintf("Error: No corresponding jump for end of block.\n")
 		return
 	}
@@ -37,7 +37,7 @@ block_stuff :: proc(program: string, i: int, bytecode: ^[dynamic]int, positions:
 		return
 	}
 
-	bytecode^[pos] = len(bytecode)
+	bytecode^[pos] = len(bytecode^)
 }
 
 actual_compile :: proc(std: ZeusStandard, program: string, i: int, bytecode: ^[dynamic]int, positions: ^[dynamic]int) {
@@ -56,10 +56,9 @@ actual_compile :: proc(std: ZeusStandard, program: string, i: int, bytecode: ^[d
 			if std < ZeusStandard.Z3 {
 				return
 			}
-			block_stuff(program, i, bytecode, positions, false)
 
 			append(bytecode, int(ZeusBytecode.JUMP_FALSE))
-			append(positions, len(bytecode))
+			append(positions, len(bytecode^))
 			append(bytecode, i + 2)
 		case '!':
 			if std < ZeusStandard.Z3 {
@@ -68,12 +67,13 @@ actual_compile :: proc(std: ZeusStandard, program: string, i: int, bytecode: ^[d
 			block_stuff(program, i, bytecode, positions, false)
 
 			append(bytecode, int(ZeusBytecode.JUMP))
-			append(positions, len(bytecode))
+			append(positions, len(bytecode^))
 			append(bytecode, i + 2)
 		case ')':
 			if std < ZeusStandard.Z3 {
 				return
 			}
+
 			block_stuff(program, i, bytecode, positions, true)
 
 			append(bytecode, int(ZeusBytecode.END))
