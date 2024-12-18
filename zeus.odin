@@ -223,7 +223,7 @@ exec_zeus :: proc(program: [dynamic]int) {
 
 	i := 0
 	for i < len(program) {
-		// fmt.printf("i: %d %s\n", i, ZeusBytecode(program[i]))
+		fmt.printf("i: %d %s\n", i, ZeusBytecode(program[i]))
 		switch ZeusBytecode(program[i]) {
 			case .INC: storage += 1
 			case .DEC: storage -= 1
@@ -291,7 +291,6 @@ exec_zeus :: proc(program: [dynamic]int) {
 				i += 1
 			case .COUNT_INC:
 				iterators[len(iterators) - 1] += 1
-				i += 1
 			case .END:
 			case .FOR:
 		}
