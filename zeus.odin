@@ -316,7 +316,7 @@ exec_zeus :: proc(program: [dynamic]int) {
 			case .MEMR:
 				addr: ^i64 = auto_cast(uintptr(storage))
 				if addr > &mem[511] {
-					fmt.eprintf("Cannot write to memory beyond 512 bytes\n")
+					fmt.eprintf("Cannot read from memory beyond 512 bytes\n")
 					continue
 				}
 
