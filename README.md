@@ -28,3 +28,10 @@ it's perfect. literally perfect. it currently has 3 standards. z1 is the most mi
 - introduced `<` which does the same thing as `=` but actually checks if hte storage cell is less than top of hte stack instead
 - introduced `~` which performs logical not on the storage cell
 - introduced `\` which swaps the storage cell and value atop the stack
+
+### z4b standard
+- introduced `d` which prints the stack and storage cell
+- introduced the count loop `c` which executes a block of code storage cell times
+- introduced `m` which pushes the storage cell to the stack and sets it to a pointer to beginning of memory
+- introduced `r` which reads from the address in storage cell and pushes the value to the stack
+- introduced `w` which writes the top of hte stack to the address in the storage cell
