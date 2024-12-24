@@ -7,7 +7,6 @@ typedef enum {
 	OP_INC,
 	OP_INCN,
 	OP_DEC,
-	OP_DECN,
 
 	OP_PUTC,
 	OP_PUTN,

@@ -35,6 +35,7 @@ void zappend(zstr_t *dest, zstr_t *src) {
 	}
 
 	dest->cstr = temp;
+	dest->len = outlen;
 
 	strcat(dest->cstr, src->cstr);
 }
