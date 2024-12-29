@@ -26,7 +26,7 @@ zstr_t from_cstr(char *cstr) {
 }
 
 void zappend(zstr_t *dest, zstr_t *src) {
-	size_t outlen = dest->len + src->len - 1;
+	size_t outlen = dest->len + src->len;
 
 	char *temp = realloc(dest->cstr, outlen);
 	if (!temp) {
