@@ -238,3 +238,33 @@ void execute_bclist(bclist_t *list) {
 	for (size_t i = 0; i < list->size; i++) {
 	}
 }
+
+bclist_t *read_bytecode(char *filename) {
+	FILE *file = fopen(filename, "rb");
+
+	if (file == NULL) {
+		fprintf(stderr, "Couldn't open file '%s' for reading bytecode.\n", filename);
+		return NULL;
+	}
+
+	fseek(file, 0L, SEEK_END);
+
+	size_t s = ftell(file);
+	rewind(file);
+
+	char *buffer = malloc(s + 1);
+
+	size_t r = fread(buffer, sizeof(char), s, file);
+	buffer[r] = '\0';
+
+	fclose(file);
+
+	bclist_t *list = malloc(sizeof(bclist_t));
+	init_bclist(list);
+
+	for (int i = 0; i < r; i++) {
+		append_bclist(list, buffer[i]);
+	}
+
+	return list;
+}
