@@ -22,6 +22,12 @@ int main(int argc, char **argv) {
 
 			print_bclist(list);
 
+			bclist_t *optimized = optimize_bclist(list);
+
+			print_bclist(optimized);
+
+			free_bclist(optimized);
+			free(optimized);
 			free_bclist(list);
 			free(list);
 		}

@@ -10,7 +10,6 @@ typedef enum {
 
 	OP_PUTC,
 	OP_PUTN,
-	OP_PUTF,
 } bcode;
 
 typedef struct bclist {

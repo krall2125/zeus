@@ -50,27 +50,6 @@ static void optimize_incdec(bcopt_t *optimizer, bclist_t *out_list) {
 	optimizer->counter = 0;
 }
 
-// putf is a special instruction
-static void wrapup_putf(bcopt_t *optimizer, bclist_t *out_list) {
-	append_bclist(out_list, OP_PUTF);
-
-	uint8_t lsb = (uint8_t)optimizer->putncount & 0xff;
-	uint8_t msb = (uint8_t)optimizer->putncount >> 8;
-
-	append_bclist(out_list, lsb);
-	append_bclist(out_list, msb);
-
-	for (int i = 0; i < optimizer->format.len; i++) {
-		append_bclist(out_list, optimizer->format.cstr[i]);
-	}
-
-	append_bclist(out_list, 0);
-
-	zfree(&optimizer->format);
-
-	optimizer->format = zfrom_cstr("");
-}
-
 void optimize_switch(bcopt_t *optimizer, bclist_t *out_list) {
 	switch (optimizer->list->items[*optimizer->i]) {
 		case OP_INC:
@@ -80,52 +59,10 @@ void optimize_switch(bcopt_t *optimizer, bclist_t *out_list) {
 			optimizer->counter--;
 			break;
 		case OP_PUTC:
-			optimize_incdec(optimizer, out_list);
-
-			char *s = malloc(2);
-			s[0] = (char)optimizer->cell;
-			s[1] = '\0';
-
-			zstr_t str = zfrom_cstr(s);
-
-			// we can free s since str has a copy of it
-			free(s);
-
-			zappend(&optimizer->format, &str);
-
-			zfree(&str);
-
-			if ((char)optimizer->cell == 10) {
-				wrapup_putf(optimizer, out_list);
-			}
+			append_bclist(out_list, OP_PUTC);
 			break;
 		case OP_PUTN:
-			optimizer->putncount++;
-			optimize_incdec(optimizer, out_list);
-
-			zstr_t fmt = zfrom_cstr("%d");
-
-			zappend(&optimizer->format, &fmt);
-
-			zfree(&fmt);
-
-			if (optimizer->putncount >= UINT16_MAX - 1) {
-				wrapup_putf(optimizer, out_list);
-			}
-		case OP_PUTF:
-			append_bclist(out_list, OP_PUTF);
-			(*optimizer->i)++;
-			append_bclist(out_list, optimizer->list->items[*optimizer->i]);
-			(*optimizer->i)++;
-			append_bclist(out_list, optimizer->list->items[*optimizer->i]);
-			(*optimizer->i)++;
-
-			while (optimizer->list->items[*optimizer->i] != 0) {
-				append_bclist(out_list, optimizer->list->items[*optimizer->i]);
-				(*optimizer->i)++;
-			}
-
-			append_bclist(out_list, optimizer->list->items[*optimizer->i]);
+			append_bclist(out_list, OP_PUTN);
 			break;
 		case OP_INCN:
 			append_bclist(out_list, OP_INCN);
@@ -160,10 +97,6 @@ bclist_t *optimize_bclist(bclist_t *list) {
 		optimize_incdec(&optimizer, out);
 	}
 
-	if (optimizer.putncount > 0 || optimizer.format.len > 0) {
-		wrapup_putf(&optimizer, out);
-	}
-
 	zfree(&optimizer.format);
 
 	return out;
@@ -175,7 +108,6 @@ char *op_string(bcode op) {
 		case OP_INCN: return "OP_INCN";
 		case OP_DEC: return "OP_DEC";
 		case OP_PUTC: return "OP_PUTC";
-		case OP_PUTF: return "OP_PUTF";
 		case OP_PUTN: return "OP_PUTN";
 		default: return "UNKNOWN";
 	}
@@ -193,55 +125,6 @@ static void print_args(bcode op, bclist_t *list, size_t *i) {
 			uint16_t num = (msb << 8) | lsb;
 			printf(" %d", num);
 
-			break;
-		}
-		case OP_PUTF: {
-			(*i)++;
-			uint8_t lsb = list->items[*i];
-			(*i)++;
-			uint8_t msb = list->items[*i];
-
-			uint16_t putncount = (msb << 8) | lsb;
-
-			printf(" %d", putncount);
-
-			zstr_t string = zfrom_cstr("");
-
-			char temp[5] = {0};
-			uint8_t counter = 0;
-
-			(*i)++;
-
-			while (list->items[*i] != 0) {
-				if (counter >= 4) {
-					temp[4] = '\0';
-
-					zstr_t ztemp = zfrom_cstr(temp);
-
-					zappend(&string, &ztemp);
-
-					zfree(&ztemp);
-					counter = 0;
-				}
-
-				temp[counter++] = list->items[*i];
-				(*i)++;
-			}
-
-			if (counter > 0) {
-				temp[4] = '\0';
-
-				zstr_t ztemp = zfrom_cstr(temp);
-
-				zappend(&string, &ztemp);
-
-				zfree(&ztemp);
-				counter = 0;
-			}
-
-			printf(" '%s'", string.cstr);
-
-			zfree(&string);
 			break;
 		}
 		default:
