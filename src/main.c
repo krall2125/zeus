@@ -20,11 +20,11 @@ int main(int argc, char **argv) {
 				exit(1);
 			}
 
-			print_bclist(list);
-
 			bclist_t *optimized = optimize_bclist(list);
 
 			print_bclist(optimized);
+
+			execute_bclist(optimized);
 
 			free_bclist(optimized);
 			free(optimized);

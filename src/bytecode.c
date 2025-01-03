@@ -11,9 +11,9 @@ void init_bclist(bclist_t *list) {
 
 void append_bclist(bclist_t *list, bcode bc) {
 	if (list->size >= list->cap) {
-		if (list->cap == 0) list->cap = 4;
-		list->cap <<= 1;
-		list->items = realloc(list->items, list->cap);
+		if (list->cap < 1) list->cap = 8;
+		list->cap *= 2;
+		list->items = realloc(list->items, list->cap * sizeof(bcode));
 	}
 
 	list->items[list->size++] = bc;
@@ -59,12 +59,15 @@ void optimize_switch(bcopt_t *optimizer, bclist_t *out_list) {
 			optimizer->counter--;
 			break;
 		case OP_PUTC:
+			optimize_incdec(optimizer, out_list);
 			append_bclist(out_list, OP_PUTC);
 			break;
 		case OP_PUTN:
+			optimize_incdec(optimizer, out_list);
 			append_bclist(out_list, OP_PUTN);
 			break;
 		case OP_INCN:
+			optimize_incdec(optimizer, out_list);
 			append_bclist(out_list, OP_INCN);
 			(*optimizer->i)++;
 			append_bclist(out_list, optimizer->list->items[*optimizer->i]);
@@ -144,8 +147,37 @@ void print_bclist(bclist_t *list) {
 	}
 }
 
+static void execute_instr(bclist_t *list, size_t *i, int64_t *storage) {
+	switch (list->items[*i]) {
+		case OP_INC:
+			(*storage)++;
+			break;
+		case OP_INCN:
+			(*i)++;
+			uint8_t lsb = list->items[*i];
+			(*i)++;
+			uint8_t msb = list->items[*i];
+
+			uint16_t num = (msb << 8) | lsb;
+
+			(*storage) += num;
+			break;
+		case OP_DEC:
+			(*storage)--;
+			break;
+		case OP_PUTC:
+			printf("%c", (char) *storage);
+			break;
+		case OP_PUTN:
+			printf("%ld", *storage);
+			break;
+	}
+}
+
 void execute_bclist(bclist_t *list) {
+	int64_t storage = 0;
 	for (size_t i = 0; i < list->size; i++) {
+		execute_instr(list, &i, &storage);
 	}
 }
 
