@@ -12,7 +12,7 @@ zstr_t zstring() {
 	return str;
 }
 
-zstr_t from_cstr(char *cstr) {
+zstr_t zfrom_cstr(char *cstr) {
 	size_t len = strlen(cstr);
 
 	zstr_t str = (zstr_t) {

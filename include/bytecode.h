@@ -32,6 +32,8 @@ void writeout_bclist(bclist_t *list, char *filename);
 // Read a list of bytecode from a binary file
 bclist_t *read_bytecode(char *filename);
 
+void print_bclist(bclist_t *list);
+
 void execute_bclist(bclist_t *list);
 
 typedef struct bc_executor {

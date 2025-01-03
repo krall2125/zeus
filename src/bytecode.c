@@ -1,4 +1,4 @@
-#include "zeus_str.h"
+#include <zeus_str.h>
 #include <bytecode.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -65,6 +65,10 @@ static void wrapup_putf(bcopt_t *optimizer, bclist_t *out_list) {
 	}
 
 	append_bclist(out_list, 0);
+
+	zfree(&optimizer->format);
+
+	optimizer->format = zfrom_cstr("");
 }
 
 void optimize_switch(bcopt_t *optimizer, bclist_t *out_list) {
@@ -109,14 +113,26 @@ void optimize_switch(bcopt_t *optimizer, bclist_t *out_list) {
 				wrapup_putf(optimizer, out_list);
 			}
 		case OP_PUTF:
-			(*optimizer->i) += 2;
+			append_bclist(out_list, OP_PUTF);
+			(*optimizer->i)++;
+			append_bclist(out_list, optimizer->list->items[*optimizer->i]);
+			(*optimizer->i)++;
+			append_bclist(out_list, optimizer->list->items[*optimizer->i]);
+			(*optimizer->i)++;
 
 			while (optimizer->list->items[*optimizer->i] != 0) {
+				append_bclist(out_list, optimizer->list->items[*optimizer->i]);
 				(*optimizer->i)++;
 			}
+
+			append_bclist(out_list, optimizer->list->items[*optimizer->i]);
 			break;
 		case OP_INCN:
-			(*optimizer->i) += 2;
+			append_bclist(out_list, OP_INCN);
+			(*optimizer->i)++;
+			append_bclist(out_list, optimizer->list->items[*optimizer->i]);
+			(*optimizer->i)++;
+			append_bclist(out_list, optimizer->list->items[*optimizer->i]);
 			break;
 	}
 }
@@ -140,6 +156,16 @@ bclist_t *optimize_bclist(bclist_t *list) {
 		optimize_switch(&optimizer, out);
 	}
 
+	if (!optimizer.counter) {
+		optimize_incdec(&optimizer, out);
+	}
+
+	if (optimizer.putncount > 0 || optimizer.format.len > 0) {
+		wrapup_putf(&optimizer, out);
+	}
+
+	zfree(&optimizer.format);
+
 	return out;
 }
 
@@ -151,6 +177,7 @@ char *op_string(bcode op) {
 		case OP_PUTC: return "OP_PUTC";
 		case OP_PUTF: return "OP_PUTF";
 		case OP_PUTN: return "OP_PUTN";
+		default: return "UNKNOWN";
 	}
 }
 
@@ -263,7 +290,20 @@ bclist_t *read_bytecode(char *filename) {
 	init_bclist(list);
 
 	for (int i = 0; i < r; i++) {
-		append_bclist(list, buffer[i]);
+		if (buffer[i] != '#') {
+			append_bclist(list, buffer[i]);
+			continue;
+		}
+
+		i++;
+		if (buffer[i] != '!') {
+			i--;
+			continue;
+		}
+
+		while (buffer[i] != 10 && buffer[i] != '\0') {
+			i++;
+		}
 	}
 
 	return list;
