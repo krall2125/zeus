@@ -20,16 +20,49 @@ int main(int argc, char **argv) {
 				exit(1);
 			}
 
+			execute_bclist(list);
+
+			free_bclist(list);
+			free(list);
+		}
+		else if (strcmp(argv[i], "c") == 0) {
+			i++;
+			if (i >= argc) {
+				fprintf(stderr, "Usage: zeus c [filename]\n");
+				fprintf(stderr, "Compile a zeus file.\n");
+				exit(1);
+			}
+
+			char *src = read_file(argv[i], NULL);
+
+			if (src == NULL) {
+				exit(1);
+			}
+
+			bclist_t *list = compile(src);
+			free(src);
+
+			char *main_filename = strtok(argv[i], ".");
+
 			bclist_t *optimized = optimize_bclist(list);
 
-			print_bclist(optimized);
+			free_bclist(list);
+			free(list);
 
-			execute_bclist(optimized);
+			int len = strlen(main_filename) + 5;
+			char *output = malloc(len);
+
+			memset(output, 0, len - 1);
+
+			strcat(output, main_filename);
+			strcat(output, ".zbc");
+
+			writeout_bclist(optimized, output);
+
+			free(output);
 
 			free_bclist(optimized);
 			free(optimized);
-			free_bclist(list);
-			free(list);
 		}
 	}
 

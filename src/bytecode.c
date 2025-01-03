@@ -2,6 +2,8 @@
 #include <bytecode.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
+#include <compiler.h>
 
 void init_bclist(bclist_t *list) {
 	list->size = 0;
@@ -29,8 +31,6 @@ typedef struct bc_optimizer {
 	int16_t counter;
 	size_t *i;
 	int64_t cell;
-	zstr_t format;
-	uint16_t putncount;
 } bcopt_t;
 
 static void optimize_incdec(bcopt_t *optimizer, bclist_t *out_list) {
@@ -38,8 +38,8 @@ static void optimize_incdec(bcopt_t *optimizer, bclist_t *out_list) {
 		return;
 	}
 
-	uint8_t lsb = (uint8_t)optimizer->counter & 0xff;
-	uint8_t msb = (uint8_t)optimizer->counter >> 8;
+	uint8_t lsb = (uint8_t)(optimizer->counter & 0xff);
+	uint8_t msb = (uint8_t)(optimizer->counter >> 8);
 
 	optimizer->cell += optimizer->counter;
 
@@ -82,8 +82,6 @@ bclist_t *optimize_bclist(bclist_t *list) {
 		.list = list,
 		.counter = 0,
 		.cell = 0,
-		.putncount = 0,
-		.format = zfrom_cstr(""),
 	};
 
 	bclist_t *out = malloc(sizeof(bclist_t));
@@ -99,8 +97,6 @@ bclist_t *optimize_bclist(bclist_t *list) {
 	if (!optimizer.counter) {
 		optimize_incdec(&optimizer, out);
 	}
-
-	zfree(&optimizer.format);
 
 	return out;
 }
@@ -125,7 +121,7 @@ static void print_args(bcode op, bclist_t *list, size_t *i) {
 			(*i)++;
 			uint8_t msb = list->items[*i];
 
-			uint16_t num = (msb << 8) | lsb;
+			int16_t num = ((int16_t)msb << 8) | (int16_t)lsb;
 			printf(" %d", num);
 
 			break;
@@ -158,7 +154,7 @@ static void execute_instr(bclist_t *list, size_t *i, int64_t *storage) {
 			(*i)++;
 			uint8_t msb = list->items[*i];
 
-			uint16_t num = (msb << 8) | lsb;
+			int16_t num = (msb << 8) | lsb;
 
 			(*storage) += num;
 			break;
@@ -182,29 +178,13 @@ void execute_bclist(bclist_t *list) {
 }
 
 bclist_t *read_bytecode(char *filename) {
-	FILE *file = fopen(filename, "rb");
-
-	if (file == NULL) {
-		fprintf(stderr, "Couldn't open file '%s' for reading bytecode.\n", filename);
-		return NULL;
-	}
-
-	fseek(file, 0L, SEEK_END);
-
-	size_t s = ftell(file);
-	rewind(file);
-
-	char *buffer = malloc(s + 1);
-
-	size_t r = fread(buffer, sizeof(char), s, file);
-	buffer[r] = '\0';
-
-	fclose(file);
+	size_t len = 0;
+	char *buffer = read_file(filename, &len);
 
 	bclist_t *list = malloc(sizeof(bclist_t));
 	init_bclist(list);
 
-	for (int i = 0; i < r; i++) {
+	for (int i = 0; i < len; i++) {
 		if (buffer[i] != '#') {
 			append_bclist(list, buffer[i]);
 			continue;
@@ -222,4 +202,21 @@ bclist_t *read_bytecode(char *filename) {
 	}
 
 	return list;
+}
+
+void writeout_bclist(bclist_t *list, char *filename) {
+	FILE *file = fopen(filename, "wb");
+
+	if (file == NULL) {
+		fprintf(stderr, "Couldn't open file '%s' for writing out bytecode.", filename);
+		return;
+	}
+
+	fprintf(file, "#!/usr/local/bin/zeus exec\n");
+
+	for (size_t i = 0; i < list->size; i++) {
+		putc(list->items[i], file);
+	}
+
+	fclose(file);
 }
