@@ -64,6 +64,30 @@ int main(int argc, char **argv) {
 			free_bclist(optimized);
 			free(optimized);
 		}
+		else if (strcmp(argv[i], "run") == 0) {
+			i++;
+			if (i >= argc) {
+				fprintf(stderr, "Usage: zeus run [filename]\n");
+				fprintf(stderr, "Run a zeus file without generating a binary bytecode file.\n");
+				exit(1);
+			}
+
+			char *src = read_file(argv[i], NULL);
+
+			if (src == NULL) {
+				exit(1);
+			}
+
+			bclist_t *list = compile(src);
+			free(src);
+
+			bclist_t *optimized = optimize_bclist(list);
+
+			execute_bclist(optimized);
+
+			free_bclist(optimized);
+			free(optimized);
+		}
 	}
 
 	return 0;
