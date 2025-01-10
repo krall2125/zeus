@@ -10,12 +10,13 @@ kinda like brainfuck but also not
 - `:` to print it as char
 
 ## zeus-2 machine (z2 but yeswessssssjdsklsdxkjnmjzjsd)
-- i need immediate mental help
-- `*` does stuff on the storage cell
-- `/` does stuff on the storage cell
+- `*` multiply storage cell by 2
+- `/` divide storage cell by 2
 - `0` resets storage cell to 0
-- `@` jumps to instruction #storage_cell (depending on the conditional flag CF unconditionally if 0, conditionally if 1)
-
-## zeus-3 machine (z3 yes balsl)
+- `@` add storage cell to the instruction pointer (jump by storage cell offset) (depending on the conditional flag CF unconditionally if 0, conditionally if 1)
 - `?` toggle conditional flag (default 0)
-- more later
+- `=` compare the storage cell with the top of the stack (equality)
+- `p` push the storage cell to the top of the stack
+- `q` pop from the stack into the storage cell
+- `\` swap the storage cell with the thing atop the stack
+- `$` duplicate the value atop the stack

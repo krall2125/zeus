@@ -35,6 +35,8 @@ void print_bclist(bclist_t *list);
 
 void execute_bclist(bclist_t *list);
 
+// why  does this exist???
+// i guess i was technically supposed to use it?
 typedef struct bc_executor {
 	bclist_t *list;
 	size_t iter;
